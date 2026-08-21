@@ -28,7 +28,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain (HttpSecurity http) throws Exception{
         http.cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth->auth.requestMatchers("/api/auth/login","/api/auth/register").permitAll()
+                .authorizeHttpRequests(auth->auth.requestMatchers("/api/auth/login","/api/auth/register","/api/health").permitAll()
                         .requestMatchers(HttpMethod.GET,"/api/albums","/api/songs").hasAnyRole("USER","ADMIN")
                         .anyRequest().hasRole("ADMIN"))
                 .sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
