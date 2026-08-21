@@ -1,0 +1,11 @@
+package in.MomenTarek.musifyapi.dto;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class RegisterRequest {
+    private String email;
+    private String password;
+}
