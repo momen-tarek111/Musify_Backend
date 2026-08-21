@@ -36,6 +36,9 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody AuthRequest request){
         try {
             User exitingUser=userService.findByEmail(request.getEmail());
+            if(exitingUser == null){
+                return ResponseEntity.badRequest().body("Email/Password is incorrect");
+            }
             if(request.getPortal().equalsIgnoreCase("admin")&&exitingUser.getRole().name().equalsIgnoreCase("USER")){
                 return ResponseEntity.badRequest().body("Email/Password is incorrect");
             }
