@@ -1,4 +1,5 @@
 package in.MomenTarek.musifyapi.security;
+
 import in.MomenTarek.musifyapi.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,33 +24,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-         final String requestTokenHeader=request.getHeader("Authorization");
-         String email=null;
-         String jwtToken=null;
-         if(request.getRequestURI().equals("/api/auth/login")||request.getRequestURI().equals("/api/auth/register")){
-             filterChain.doFilter(request,response);
-             return;
-         }
-         if(requestTokenHeader!=null&&requestTokenHeader.startsWith("Bearer ")){
-             jwtToken=requestTokenHeader.substring(7);
-             try {
-                email=jwtUtil.extractEmail(jwtToken);
-             }catch (IllegalArgumentException e){
-                throw new RuntimeException("Unable to get JWT token");
-             }catch (Exception e){
-                throw new RuntimeException(e.getMessage());
-             }
-         }else{
-             throw new IllegalArgumentException("JWT token does not begin with Bearer token");
-         }
-         if(email!=null&& SecurityContextHolder.getContext().getAuthentication()==null){
-             UserDetails userDetails=this.userDetailsService.loadUserByUsername(email);
-             if(jwtUtil.validateToken(jwtToken,userDetails)){
-                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken=new UsernamePasswordAuthenticationToken(userDetails,null,userDetails.getAuthorities());
-                 usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-             }
-         }
-         filterChain.doFilter(request,response);
+        final String requestTokenHeader = request.getHeader("Authorization");
+        String email = null;
+        String jwtToken = null;
+
+        if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
+            jwtToken = requestTokenHeader.substring(7);
+            try {
+                email = jwtUtil.extractEmail(jwtToken);
+            } catch (Exception e) {
+                // Invalid/expired/malformed token — don't throw, just skip authentication
+                logger.warn("Invalid JWT token: " + e.getMessage());
+            }
+        }
+        // No Authorization header at all is fine here — let Spring Security's
+        // authorizeHttpRequests rules decide whether the endpoint needs auth.
+
+        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(email);
+            if (jwtUtil.validateToken(jwtToken, userDetails)) {
+                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+            }
+        }
+
+        filterChain.doFilter(request, response);
     }
 }
